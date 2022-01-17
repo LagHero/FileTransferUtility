@@ -28,4 +28,8 @@ public class ServiceFacade {
     public PathProcessResult processRootFolder(File sourceFolderPath) {
         return transferService.processRootFolder(sourceFolderPath);
     }
+
+    public void stopService() {
+        transferService.stop();
+    }
 }

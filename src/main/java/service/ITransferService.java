@@ -6,4 +6,6 @@ import java.io.File;
 
 public interface ITransferService {
     PathProcessResult processRootFolder(File sourceFolderPath);
+
+    void stop();
 }

@@ -29,6 +29,7 @@ public class WindowFrame {
         initSourceLabel(frame);
         initButton(frame);
         initCountLabels(frame);
+        initCancelButton(frame);
     }
 
     public static WindowFrame getInstance(){
@@ -49,7 +50,7 @@ public class WindowFrame {
 
     public void initSourceLabel(JFrame frame) {
         frame.add(createNewLabel("Source: ", 50,50,100,30));
-        sourceTextBox = new JTextField();
+        sourceTextBox = new JTextField("C:\\");
         sourceTextBox.setBounds(200, 50, 400, 30);
         frame.add(sourceTextBox);
     }
@@ -82,7 +83,6 @@ public class WindowFrame {
                         // TODO: Debugging
                         System.out.println("Shutdown processResultThread");
                     }
-                    System.out.println("processResultThread update");
                     updateFolderCount(processResult.getFolderCount().intValue());
                     updateFileCount(processResult.getFileCount().intValue());
                 };
@@ -102,6 +102,16 @@ public class WindowFrame {
         fileCountLabel = new JLabel("0");
         fileCountLabel.setBounds(200, 350, 200, 30);
         frame.add(fileCountLabel);
+    }
+    public void initCancelButton(JFrame frame) {
+        JButton button = new JButton("Cancel");
+        button.setBounds(50,400,200,50);
+        button.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                getFacade().stopService();
+            }
+        });
+        frame.add(button);
     }
 
     private JLabel createNewLabel(String label, int x, int y, int width, int height){
