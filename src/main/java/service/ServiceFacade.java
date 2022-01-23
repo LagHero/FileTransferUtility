@@ -1,6 +1,7 @@
 package service;
 
 import service.transfer.PathProcessResult;
+import service.transfer.TransferProcessResult;
 import service.transfer.TransferService;
 import service.validation.PathValidationService;
 import service.validation.PathValidationResult;
@@ -25,8 +26,12 @@ public class ServiceFacade {
         return pathValidationService.validatePath(path);
     }
 
-    public PathProcessResult processRootFolder(File sourceFolderPath) {
-        return transferService.processRootFolder(sourceFolderPath);
+    public PathProcessResult startProcessingRootFolder(File sourceFolderPath) {
+        return transferService.startProcessingRootFolder(sourceFolderPath);
+    }
+
+    public TransferProcessResult startTransferProcess(File sourceFolderPath, File destinationFolderPath, PathProcessResult result) {
+        return transferService.startTransferProcess(sourceFolderPath, destinationFolderPath, result);
     }
 
     public void stopService() {

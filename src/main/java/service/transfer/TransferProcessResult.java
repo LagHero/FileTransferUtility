@@ -1,16 +1,14 @@
 package service.transfer;
 
 import java.io.File;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class PathProcessResult {
+public class TransferProcessResult {
 
     private final AtomicBoolean isDone = new AtomicBoolean(false);
     private final AtomicInteger folderCount = new AtomicInteger();
     private final AtomicInteger fileCount = new AtomicInteger();
-    private final ConcurrentLinkedQueue<FolderAndHashcode> folderAndHashcodeList = new ConcurrentLinkedQueue<FolderAndHashcode>();
 
     public boolean isDone() {
         return isDone.get();
@@ -36,14 +34,7 @@ public class PathProcessResult {
         fileCount.incrementAndGet();
     }
 
-    public void addFolder(FolderAndHashcode folderAndHashcode) {
-        // Save these folders for the transfer thread
-        folderAndHashcodeList.offer(folderAndHashcode);
-
-        //REVIEW: We might want to wait if the queue is too big.
-    }
-
-    public FolderAndHashcode nextFolder() {
-        return folderAndHashcodeList.poll();
+    public void addFolder(File folder, int folderHashcode) {
+        //TODO: save these folders for the transfer thread
     }
 }

@@ -1,71 +1,46 @@
 package service.transfer;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import service.ITransferService;
 
-import java.io.File;
+import java.io.*;
 import java.lang.Thread;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TransferService implements ITransferService {
 
+    public final static String HASHCODE_FILE_NAME = "hashcode.transfer";
+    public final static String HASHCODE_FILE_PROP_HASH = "hashcode";
     private final AtomicBoolean cancel = new AtomicBoolean(false);
 
     @Override
-    public PathProcessResult processRootFolder(File sourceFolderPath) {
+    public PathProcessResult startProcessingRootFolder(File sourceFolderPath) {
         cancel.set(false);
-        PathProcessResult result = new PathProcessResult();
 
         // Start processing on another thread
-        Thread thread = new Thread("process-root-folder-thread"){
-            public void run(){
-                // Recursively
-                processFolder(sourceFolderPath, result);
-                result.setDone();
-            }
-        };
+        PathProcessResult result = new PathProcessResult();
+        ProcessFolderThread thread = new ProcessFolderThread(sourceFolderPath, result, cancel);
         thread.start();
 
         return result;
     }
 
-    private void processFolder(File folder, PathProcessResult result){
-        try {
-            System.out.println("processFolder " + folder.toString());
-            // Save a list of folders to process, so we can search breath-first
-            List<File> folders = Lists.newLinkedList();
-            File[] files = folder.listFiles();
-            if(files == null){
-                System.out.println("No files in folder: " + folder.toString());
-                return;
-            }
-            for (File f : files) {
-                if (f.isDirectory()) {
-                    result.incrementFolderCount();
-                    folders.add(f);
-                } else if (f.isFile()) {
-                    result.incrementFileCount();
-                } else {
-                    System.out.println("Unknown item: " + f.toString());
-                }
-                if(cancel.get()){
-                    System.out.println("Canceled ProcessFolder");
-                    break;
-                }
-            }
-            // Now process each subdirectory
-            for (File f : folders) {
-                processFolder(f, result);
-                if(cancel.get()){
-                    System.out.println("Canceled ProcessFolder");
-                    break;
-                }
-            }
-        }catch (Exception e){
-            System.out.println(e);
+    @Override
+    public TransferProcessResult startTransferProcess(File sourceFolderPath, File destinationFolderPath, PathProcessResult result) {
+        if(cancel.get()){
+            return null;
         }
+
+        // Start transferring files
+        TransferProcessResult transferResult = new TransferProcessResult();
+        TransferProcessThread transferThread = new TransferProcessThread(sourceFolderPath, destinationFolderPath, result, transferResult, cancel);
+        transferThread.start();
+
+        return transferResult;
     }
 
     @Override

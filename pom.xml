@@ -14,11 +14,19 @@
     </properties>
 
     <dependencies>
+
         <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>30.1.1-jre</version>
+        </dependency>
+
+        <!-- https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
         </dependency>
 
     </dependencies>

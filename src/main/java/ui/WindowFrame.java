@@ -3,6 +3,7 @@ package ui;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import service.ServiceFacade;
 import service.transfer.PathProcessResult;
+import service.transfer.TransferProcessResult;
 import service.validation.PathValidationResult;
 
 import javax.swing.*;
@@ -19,6 +20,7 @@ public class WindowFrame {
     private static final WindowFrame INSTANCE = new WindowFrame();
 
     private static JTextField sourceTextBox;
+    private static JTextField destinationTextBox;
     private static JLabel folderCountLabel;
     private static JLabel fileCountLabel;
 
@@ -26,7 +28,8 @@ public class WindowFrame {
     private WindowFrame(){
         // Create and set up the window.
         JFrame frame = createFrame();
-        initSourceLabel(frame);
+        initSourceField(frame);
+        initDestinationField(frame);
         initButton(frame);
         initCountLabels(frame);
         initCancelButton(frame);
@@ -48,11 +51,18 @@ public class WindowFrame {
         return frame;
     }
 
-    public void initSourceLabel(JFrame frame) {
+    public void initSourceField(JFrame frame) {
         frame.add(createNewLabel("Source: ", 50,50,100,30));
         sourceTextBox = new JTextField("C:\\");
         sourceTextBox.setBounds(200, 50, 400, 30);
         frame.add(sourceTextBox);
+    }
+
+    public void initDestinationField(JFrame frame) {
+        frame.add(createNewLabel("Destination: ", 50,100,100,30));
+        destinationTextBox = new JTextField("C:\\");
+        destinationTextBox.setBounds(200, 100, 400, 30);
+        frame.add(destinationTextBox);
     }
 
     public void initButton(JFrame frame) {
@@ -60,6 +70,10 @@ public class WindowFrame {
         button.setBounds(50,200,200,50);
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                // Disable the button
+                button.setEnabled(false);
+
+                // Validate the source folder
                 String sourceFolderPathText = sourceTextBox.getText();
                 PathValidationResult result = getFacade().validatePath(sourceFolderPathText);
                 if(!result.isValid()) {
@@ -67,26 +81,62 @@ public class WindowFrame {
                         System.out.println(msg);
                     }
                     // TODO: Tell the user about the errors
+                    button.setEnabled(true);
                     return;
                 }
-
                 File sourceFolderPath = result.getFile();
 
-                // Tell the service to start gathering the counts
-                PathProcessResult processResult = getFacade().processRootFolder(sourceFolderPath);
+                // Tell the service to start processing
+                PathProcessResult processResult = getFacade().startProcessingRootFolder(sourceFolderPath);
+
                 // Start a thread to keep updating the counts
-                ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("process-result-thread-%d").build();
-                final ScheduledExecutorService processResultThreadService = Executors.newSingleThreadScheduledExecutor();
+                ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("ui-process-result-thread-updater-%d").build();
+                final ScheduledExecutorService processResultThreadService = Executors.newSingleThreadScheduledExecutor(namedThreadFactory);
                 Runnable processResultThread = () -> {
                     if (processResult.isDone()) {
                         processResultThreadService.shutdown();
-                        // TODO: Debugging
-                        System.out.println("Shutdown processResultThread");
+                        System.out.println("Shutdown processResultUIThread");
                     }
                     updateFolderCount(processResult.getFolderCount().intValue());
                     updateFileCount(processResult.getFileCount().intValue());
                 };
                 processResultThreadService.scheduleAtFixedRate(processResultThread, 0, 100, TimeUnit.MILLISECONDS);
+
+                // Validate the destination folder
+                String destinationFolderPathText = destinationTextBox.getText();
+                result = getFacade().validatePath(destinationFolderPathText);
+                if(!result.isValid()) {
+                    for(String msg : result.getErrorMessages()){
+                        System.out.println(msg);
+                    }
+                    // TODO: Tell the user about the errors
+                    button.setEnabled(true);
+                    return;
+                }
+                File destinationFolderPath = result.getFile();
+
+                // Tell the service to start processing
+                TransferProcessResult transferResult = getFacade().startTransferProcess(sourceFolderPath, destinationFolderPath, processResult);
+
+                // Start a thread to keep updating the counts
+                ThreadFactory transferThreadFactory = new ThreadFactoryBuilder().setNameFormat("ui-transfer-thread-updater-%d").build();
+                final ScheduledExecutorService transferResultThreadService = Executors.newSingleThreadScheduledExecutor(transferThreadFactory);
+                Runnable tranferResultThread = () -> {
+                    if (transferResult.isDone()) {
+                        transferResultThreadService.shutdown();
+                        System.out.println("Shutdown tranferResultThreadUIUpdater");
+                    }
+                    updateFolderCount(transferResult.getFolderCount().intValue());
+                    updateFileCount(transferResult.getFileCount().intValue());
+                };
+                transferResultThreadService.scheduleAtFixedRate(tranferResultThread, 0, 100, TimeUnit.MILLISECONDS);
+
+
+                // Wait for the process to complete
+                processResultThreadService.isTerminated();
+                transferResultThreadService.isTerminated();
+                System.out.println("Done!");
+                button.setEnabled(true);
             }
         });
         frame.add(button);
