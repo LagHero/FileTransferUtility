@@ -13,29 +13,27 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ProcessFolderThread extends Thread {
+public class ProcessFolderThread extends AbstractServiceThread {
     private final File sourceFolderPath;
     private final PathProcessResult result;
-    private final AtomicBoolean cancel;
 
     public ProcessFolderThread(File sourceFolderPath, PathProcessResult result, AtomicBoolean cancel){
-        super("process-folder-thread");
+        super("process-folder-thread", cancel);
         this.sourceFolderPath = sourceFolderPath;
         this.result = result;
-        this.cancel = cancel;
     }
 
     public void run(){
-        System.out.println("Started process-folder-thread");
+        logMsg("Started process-folder-thread");
         // Start recursive process
         processFolder(sourceFolderPath, result, cancel);
         result.setDone();
-        System.out.println("Finished process-folder-thread");
+        logMsg("Finished process-folder-thread");
     }
 
     private int processFolder(File folder, PathProcessResult result, AtomicBoolean cancel){
         String folderName = folder.toString();
-        System.out.println("Processing folder " + folderName);
+        logMsg("Processing folder " + folderName);
         try {
             // Get all the subfolders and files
             FoldersAndFiles folderContents = getFoldersAndFiles(folder.listFiles());
@@ -63,12 +61,12 @@ public class ProcessFolderThread extends Thread {
 
             // Save the hashcode for this folder
             Integer folderHashcode = hashcode.build();
-            System.out.println("\t Hashcode: " + folderHashcode);
+            logMsg("\t Hashcode: " + folderHashcode);
             result.addFolder(new FolderAndHashcode(folder, folderHashcode));
             return folderHashcode;
 
         }catch (Exception e){
-            System.out.println("Exception while processing folder '" + folderName + "': " + e.getMessage());
+            logMsg("Exception while processing folder '" + folderName + "': " + e.getMessage());
             e.printStackTrace();
             return 0;
         }
@@ -82,7 +80,7 @@ public class ProcessFolderThread extends Thread {
 
             // Check if the user cancelled
             if(cancel.get()) {
-                System.out.println("Cancelled process");
+                logMsg("Cancelled process");
                 return true;
             }
         }
@@ -95,7 +93,7 @@ public class ProcessFolderThread extends Thread {
 
             // Check if the user cancelled
             if(cancel.get()) {
-                System.out.println("Cancelled process");
+                logMsg("Cancelled process");
                 return true;
             }
         }
@@ -113,17 +111,17 @@ public class ProcessFolderThread extends Thread {
                 result.incrementFileCount();
                 files.add(f);
             } else {
-                System.out.println("Skipping unknown file: " + f.toString());
+                logMsg("\tSkipping unknown file: " + f.toString());
             }
 
             // Check if the user cancelled
             if(cancel.get()) {
-                System.out.println("Cancelled process");
+                logMsg("Cancelled process");
                 return null;
             }
         }
-        System.out.println("\t Folder count: " + subfolders.size());
-        System.out.println("\t File count: " + files.size());
+        logMsg("\tFolder count: " + subfolders.size());
+        logMsg("\tFile count: " + files.size());
         return new FoldersAndFiles(subfolders, files);
     }
 

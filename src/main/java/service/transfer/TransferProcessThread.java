@@ -9,25 +9,23 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TransferProcessThread extends Thread {
+public class TransferProcessThread extends AbstractServiceThread {
 
     private final File sourceFolderPath;
     private final File destinationFolderPath;
     private final PathProcessResult result;
     private final TransferProcessResult transferResult;
-    private final AtomicBoolean cancel;
 
     public TransferProcessThread(File sourceFolderPath, File destinationFolderPath, PathProcessResult result, TransferProcessResult transferResult, AtomicBoolean cancel) {
-        super("transfer-thread");
+        super("transfer-thread", cancel);
         this.sourceFolderPath = sourceFolderPath;
         this.destinationFolderPath = destinationFolderPath;
         this.result = result;
         this.transferResult = transferResult;
-        this.cancel = cancel;
     }
 
     public void run(){
-        System.out.println("Started transfer-thread");
+        logMsg("Started transfer-thread");
 
         while (!cancel.get()) {
             // Get a folder that has been processed
@@ -49,13 +47,13 @@ public class TransferProcessThread extends Thread {
             try {
                 transferFolder(sourceFolder, destinationFolder, transferResult, cancel);
             } catch (IOException e) {
-                System.out.println("Exception while transferring to: " + destinationFolder);
+                logMsg("Exception while transferring to: " + destinationFolder);
                 e.printStackTrace();
             }
         }
 
         result.setDone();
-        System.out.println("Finished transfer-thread");
+        logMsg("Finished transfer-thread");
     }
 
     private File getDestinationFolder(File rootDestinationFolderPath, File sourceFolder) {
@@ -71,7 +69,7 @@ public class TransferProcessThread extends Thread {
     }
 
     private void transferFolder(FolderAndHashcode sourceFolder, File destinationFolder, TransferProcessResult transferResult, AtomicBoolean cancel) throws IOException {
-        System.out.println(String.format("Transferring data %n\tFrom: %s%n\tTo: %s", sourceFolder.getFolder(), destinationFolder));
+        logMsg(String.format("Transferring data %n\tFrom: %s%n\tTo: %s", sourceFolder.getFolder(), destinationFolder));
 
         // Check the hashcode
         boolean transferFiles;
@@ -96,7 +94,7 @@ public class TransferProcessThread extends Thread {
             transferFiles(sourceFolder.getFolder(), destinationFolder, transferResult, cancel);
 
             // Write the Hashcode
-            System.out.println("Wrote hashcode property file to folder: " + destinationFolder);
+            logMsg("Wrote hashcode property file to folder: " + destinationFolder);
             saveHashcode(hashcodeFile, sourceFolder.getFolderHashcode());
         }
     }
@@ -114,12 +112,12 @@ public class TransferProcessThread extends Thread {
             reader.close();
             String hashcode = prop.getProperty(TransferService.HASHCODE_FILE_PROP_HASH);
             if(hashcode == null){
-                System.out.println(String.format("No hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
+                logMsg(String.format("No hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
                 return null;
             }
             return Integer.valueOf(hashcode);
         } catch (IOException e) {
-            System.out.println(String.format("Exception while reading hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
+            logMsg(String.format("Exception while reading hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
             e.printStackTrace();
             return null;
         }
@@ -129,7 +127,7 @@ public class TransferProcessThread extends Thread {
         // Loop through all the source files and copy them over to the destination folder
         for(File file : sourceFolder.listFiles()) {
             if(cancel.get()) {
-                System.out.println("Cancelled process");
+                logMsg("Cancelled process");
                 break;
             }
             if(file.isDirectory()){
@@ -158,7 +156,7 @@ public class TransferProcessThread extends Thread {
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            System.out.println(String.format("Exception while writing hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
+            logMsg(String.format("Exception while writing hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
             e.printStackTrace();
         }
     }
