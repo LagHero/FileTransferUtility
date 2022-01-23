@@ -1,6 +1,5 @@
 package service.transfer;
 
-import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractServiceThread extends Thread {
@@ -13,6 +12,6 @@ public abstract class AbstractServiceThread extends Thread {
     }
 
     void logMsg(String msg) {
-        System.out.println(String.format("%s - %s", this.getName(), msg));
+        System.out.printf("%s - %s%n", this.getName(), msg);
     }
 }

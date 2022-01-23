@@ -2,15 +2,9 @@ package service.transfer;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ProcessFolderThread extends AbstractServiceThread {
@@ -35,8 +29,14 @@ public class ProcessFolderThread extends AbstractServiceThread {
         String folderName = folder.toString();
         logMsg("Processing folder " + folderName);
         try {
+            File[] fileArray = folder.listFiles();
+            if(fileArray == null){
+                logMsg("The given file needs to be a folder: " + folder);
+                return 0;
+            }
+
             // Get all the subfolders and files
-            FoldersAndFiles folderContents = getFoldersAndFiles(folder.listFiles());
+            FoldersAndFiles folderContents = getFoldersAndFiles(fileArray);
             if(folderContents == null){
                 // Cancelled
                 return 0;
@@ -111,7 +111,7 @@ public class ProcessFolderThread extends AbstractServiceThread {
                 result.incrementFileCount();
                 files.add(f);
             } else {
-                logMsg("\tSkipping unknown file: " + f.toString());
+                logMsg("\tSkipping unknown file: " + f);
             }
 
             // Check if the user cancelled

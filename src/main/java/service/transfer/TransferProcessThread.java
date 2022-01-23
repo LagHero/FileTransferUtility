@@ -1,11 +1,7 @@
 package service.transfer;
 
-
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
 import java.io.*;
 import java.nio.file.*;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -63,7 +59,9 @@ public class TransferProcessThread extends AbstractServiceThread {
         File destinationFolder = new File(rootDestinationFolderPath, folderPath.toString());
 
         // Create the folder and its parents if needed
-        destinationFolder.mkdirs();
+        if(destinationFolder.mkdirs()) {
+            logMsg("Created destination folder: " + destinationFolder);
+        }
 
         return destinationFolder;
     }
@@ -74,18 +72,14 @@ public class TransferProcessThread extends AbstractServiceThread {
         // Check the hashcode
         boolean transferFiles;
         File hashcodeFile = getHashcodeFile(destinationFolder);
-        if(hashcodeFile == null || !hashcodeFile.exists()) {
+        if(!hashcodeFile.exists()) {
             transferFiles = true;
         } else {
             Integer destinationHash = readHashcode(hashcodeFile);
             if(destinationHash == null) {
                 transferFiles = true;
             } else {
-                if(destinationHash.equals(sourceFolder.getFolderHashcode())) {
-                    transferFiles = false;
-                } else {
-                    transferFiles = true;
-                }
+                transferFiles = !destinationHash.equals(sourceFolder.getFolderHashcode());
             }
         }
 
@@ -100,8 +94,7 @@ public class TransferProcessThread extends AbstractServiceThread {
     }
 
     private File getHashcodeFile(File destinationFolder) {
-        File hashcodePropFile = new File(destinationFolder.getPath(), TransferService.HASHCODE_FILE_NAME);
-        return hashcodePropFile;
+        return new File(destinationFolder.getPath(), TransferService.HASHCODE_FILE_NAME);
     }
 
     private Integer readHashcode(File hashcodeFile) {
@@ -112,20 +105,26 @@ public class TransferProcessThread extends AbstractServiceThread {
             reader.close();
             String hashcode = prop.getProperty(TransferService.HASHCODE_FILE_PROP_HASH);
             if(hashcode == null){
-                logMsg(String.format("No hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
+                logMsg(String.format("No hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile));
                 return null;
             }
             return Integer.valueOf(hashcode);
         } catch (IOException e) {
-            logMsg(String.format("Exception while reading hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
+            logMsg(String.format("Exception while reading hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile));
             e.printStackTrace();
             return null;
         }
     }
 
     private void transferFiles(File sourceFolder, File destinationFolder, TransferProcessResult transferResult, AtomicBoolean cancel) throws IOException {
+        File[] fileArray = sourceFolder.listFiles();
+        if(fileArray == null){
+            logMsg("The given file needs to be a folder: " + sourceFolder);
+            return;
+        }
+
         // Loop through all the source files and copy them over to the destination folder
-        for(File file : sourceFolder.listFiles()) {
+        for(File file : fileArray) {
             if(cancel.get()) {
                 logMsg("Cancelled process");
                 break;
@@ -142,9 +141,9 @@ public class TransferProcessThread extends AbstractServiceThread {
                 // Files are equal, skip
                 continue;
             }
-            Files.copy(sourceFolder.toPath(), destinationFolder.toPath(), new CopyOption[] {StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS});
+            Files.copy(sourceFolder.toPath(), destinationFolder.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS);
         }
-        Files.copy(sourceFolder.toPath(), destinationFolder.toPath(), new CopyOption[] {StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS});
+        Files.copy(sourceFolder.toPath(), destinationFolder.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS);
     }
 
     private void saveHashcode(File hashcodeFile, int folderHashcode) {
@@ -156,7 +155,7 @@ public class TransferProcessThread extends AbstractServiceThread {
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            logMsg(String.format("Exception while writing hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile.toString()));
+            logMsg(String.format("Exception while writing hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile));
             e.printStackTrace();
         }
     }
