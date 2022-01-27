@@ -27,7 +27,7 @@ public class ProcessFolderThread extends AbstractServiceThread {
 
     private int processFolder(File folder, PathProcessResult result, AtomicBoolean cancel){
         String folderName = folder.toString();
-        logMsg("Processing folder " + folderName);
+        logMsg("Processing folder " + folderName + "...");
         try {
             File[] fileArray = folder.listFiles();
             if(fileArray == null){
@@ -61,7 +61,8 @@ public class ProcessFolderThread extends AbstractServiceThread {
 
             // Save the hashcode for this folder
             Integer folderHashcode = hashcode.build();
-            logMsg("\t Hashcode: " + folderHashcode);
+            logMsg(String.format("Processed folder %s: %n\tFolder count: %s %n\tFile count: %s %n\tHashcode: %s",
+                    folderName, subfolders.size(), files.size(), folderHashcode));
             result.addFolder(new FolderAndHashcode(folder, folderHashcode));
             return folderHashcode;
 
@@ -120,8 +121,6 @@ public class ProcessFolderThread extends AbstractServiceThread {
                 return null;
             }
         }
-        logMsg("\tFolder count: " + subfolders.size());
-        logMsg("\tFile count: " + files.size());
         return new FoldersAndFiles(subfolders, files);
     }
 
