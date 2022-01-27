@@ -37,7 +37,7 @@ public class TransferProcessThread extends AbstractServiceThread {
             }
 
             // Find the corresponding destination folder
-            File destinationFolder = getDestinationFolder(destinationFolderPath, sourceFolder.getFolder());
+            File destinationFolder = getDestinationFolder(sourceFolderPath, destinationFolderPath, sourceFolder.getFolder());
 
             // Transfer the files
             try {
@@ -52,11 +52,10 @@ public class TransferProcessThread extends AbstractServiceThread {
         logMsg("Finished transfer-thread");
     }
 
-    private File getDestinationFolder(File rootDestinationFolderPath, File sourceFolder) {
+    private File getDestinationFolder(File rootSourceFolder, File rootDestinationFolderPath, File sourceFolder) {
         // Get source folder path minus the root source folder
-        Path folderPath = sourceFolder.toPath();
-        folderPath = folderPath.subpath(1, folderPath.getNameCount());
-        File destinationFolder = new File(rootDestinationFolderPath, folderPath.toString());
+        String sourceFolderRelativePath = sourceFolder.toString().replace(rootSourceFolder.getParent(), "");
+        File destinationFolder = new File(rootDestinationFolderPath, sourceFolderRelativePath);
 
         // Create the folder and its parents if needed
         if(destinationFolder.mkdirs()) {
