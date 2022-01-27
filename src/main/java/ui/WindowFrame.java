@@ -23,6 +23,8 @@ public class WindowFrame {
     private static JTextField destinationTextBox;
     private static JLabel folderCountLabel;
     private static JLabel fileCountLabel;
+    private static JLabel transferFolderCountLabel;
+    private static JLabel transferFileCountLabel;
 
     // Singleton
     private WindowFrame(){
@@ -66,7 +68,7 @@ public class WindowFrame {
     }
 
     public void initButton(JFrame frame) {
-        JButton button = new JButton("Click Here..!");
+        JButton button = new JButton("Start Transfer!");
         button.setBounds(50,200,200,50);
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -121,20 +123,30 @@ public class WindowFrame {
                 // Start a thread to keep updating the counts
                 ThreadFactory transferThreadFactory = new ThreadFactoryBuilder().setNameFormat("ui-transfer-thread-updater-%d").build();
                 final ScheduledExecutorService transferResultThreadService = Executors.newSingleThreadScheduledExecutor(transferThreadFactory);
-                Runnable tranferResultThread = () -> {
+                Runnable transferResultThread = () -> {
                     if (transferResult.isDone()) {
                         transferResultThreadService.shutdown();
-                        System.out.println("Shutdown tranferResultThreadUIUpdater");
+                        System.out.println("Shutdown transferResultThreadUIUpdater");
                     }
-                    updateFolderCount(transferResult.getFolderCount().intValue());
-                    updateFileCount(transferResult.getFileCount().intValue());
+                    updateTransferFolderCount(transferResult.getFolderCount().intValue());
+                    updateTransferFileCount(transferResult.getFileCount().intValue());
                 };
-                transferResultThreadService.scheduleAtFixedRate(tranferResultThread, 0, 100, TimeUnit.MILLISECONDS);
+                transferResultThreadService.scheduleAtFixedRate(transferResultThread, 0, 100, TimeUnit.MILLISECONDS);
 
 
                 // Wait for the process to complete
-                processResultThreadService.isTerminated();
-                transferResultThreadService.isTerminated();
+                try {
+                    boolean waitingForCompletion = true;
+                    while (waitingForCompletion) {
+                        waitingForCompletion = !processResultThreadService.awaitTermination(5, TimeUnit.SECONDS);
+                    }
+                    waitingForCompletion = true;
+                    while (waitingForCompletion) {
+                        waitingForCompletion = !transferResultThreadService.awaitTermination(5, TimeUnit.SECONDS);
+                    }
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
                 System.out.println("Done!");
                 button.setEnabled(true);
             }
@@ -152,6 +164,16 @@ public class WindowFrame {
         fileCountLabel = new JLabel("0");
         fileCountLabel.setBounds(200, 350, 200, 30);
         frame.add(fileCountLabel);
+
+        frame.add(createNewLabel("Transfer Folder Count: ", 450,300,100,30));
+        transferFolderCountLabel = new JLabel("0");
+        transferFolderCountLabel.setBounds(600, 300, 200, 30);
+        frame.add(transferFolderCountLabel);
+
+        frame.add(createNewLabel("Transfer File Count: ", 450,350,100,30));
+        transferFileCountLabel = new JLabel("0");
+        transferFileCountLabel.setBounds(600, 350, 200, 30);
+        frame.add(transferFileCountLabel);
     }
     public void initCancelButton(JFrame frame) {
         JButton button = new JButton("Cancel");
@@ -170,12 +192,20 @@ public class WindowFrame {
         return newLabel;
     }
 
-    synchronized public static void updateFolderCount(int valueTodisplay){
-        folderCountLabel.setText(String.valueOf(valueTodisplay));
+    synchronized public static void updateFolderCount(int valueToDisplay){
+        folderCountLabel.setText(String.valueOf(valueToDisplay));
     }
 
-    synchronized public static void updateFileCount(int valueTodisplay){
-        fileCountLabel.setText(String.valueOf(valueTodisplay));
+    synchronized public static void updateFileCount(int valueToDisplay){
+        fileCountLabel.setText(String.valueOf(valueToDisplay));
+    }
+
+    synchronized public static void updateTransferFolderCount(int valueToDisplay){
+        transferFolderCountLabel.setText(String.valueOf(valueToDisplay));
+    }
+
+    synchronized public static void updateTransferFileCount(int valueToDisplay){
+        transferFileCountLabel.setText(String.valueOf(valueToDisplay));
     }
 
     private ServiceFacade getFacade(){
