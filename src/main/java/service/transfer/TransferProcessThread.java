@@ -48,7 +48,7 @@ public class TransferProcessThread extends AbstractServiceThread {
             }
         }
 
-        result.setDone();
+        transferResult.setDone();
         logMsg("Finished transfer-thread");
     }
 
@@ -73,12 +73,20 @@ public class TransferProcessThread extends AbstractServiceThread {
         File hashcodeFile = getHashcodeFile(destinationFolder);
         if(!hashcodeFile.exists()) {
             transferFiles = true;
+            logMsg(String.format("\tHashcode file missing"));
         } else {
             Integer destinationHash = readHashcode(hashcodeFile);
             if(destinationHash == null) {
                 transferFiles = true;
+                logMsg(String.format("\tHashcode not found"));
             } else {
-                transferFiles = !destinationHash.equals(sourceFolder.getFolderHashcode());
+                if(destinationHash.equals(sourceFolder.getFolderHashcode())) {
+                    transferFiles = false;
+                    logMsg(String.format("\tHashcode is equal"));
+                } else {
+                    transferFiles = true;
+                    logMsg(String.format("\tHashcode not equal"));
+                }
             }
         }
 
@@ -140,9 +148,9 @@ public class TransferProcessThread extends AbstractServiceThread {
                 // Files are equal, skip
                 continue;
             }
+            logMsg(String.format("Transferring file %n\tFrom: %s%n\tTo: %s", sourcePath, destinationPath));
             Files.copy(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS);
         }
-        Files.copy(sourceFolder.toPath(), destinationFolder.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS);
     }
 
     private void saveHashcode(File hashcodeFile, int folderHashcode) {
