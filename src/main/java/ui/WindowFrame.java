@@ -95,12 +95,12 @@ public class WindowFrame {
                 ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("ui-process-result-thread-updater-%d").build();
                 final ScheduledExecutorService processResultThreadService = Executors.newSingleThreadScheduledExecutor(namedThreadFactory);
                 Runnable processResultThread = () -> {
+                    updateFolderCount(processResult.getFolderCount().intValue());
+                    updateFileCount(processResult.getFileCount().intValue());
                     if (processResult.isDone()) {
                         processResultThreadService.shutdown();
                         System.out.println("Shutdown processResultUIThread");
                     }
-                    updateFolderCount(processResult.getFolderCount().intValue());
-                    updateFileCount(processResult.getFileCount().intValue());
                 };
                 processResultThreadService.scheduleAtFixedRate(processResultThread, 0, 100, TimeUnit.MILLISECONDS);
 
@@ -124,12 +124,12 @@ public class WindowFrame {
                 ThreadFactory transferThreadFactory = new ThreadFactoryBuilder().setNameFormat("ui-transfer-thread-updater-%d").build();
                 final ScheduledExecutorService transferResultThreadService = Executors.newSingleThreadScheduledExecutor(transferThreadFactory);
                 Runnable transferResultThread = () -> {
+                    updateTransferFolderCount(transferResult.getFolderCount().intValue());
+                    updateTransferFileCount(transferResult.getFileCount().intValue());
                     if (transferResult.isDone()) {
                         transferResultThreadService.shutdown();
                         System.out.println("Shutdown transferResultThreadUIUpdater");
                     }
-                    updateTransferFolderCount(transferResult.getFolderCount().intValue());
-                    updateTransferFileCount(transferResult.getFileCount().intValue());
                 };
                 transferResultThreadService.scheduleAtFixedRate(transferResultThread, 0, 100, TimeUnit.MILLISECONDS);
 
