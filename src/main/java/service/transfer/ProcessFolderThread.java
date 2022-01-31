@@ -18,20 +18,20 @@ public class ProcessFolderThread extends AbstractServiceThread {
     }
 
     public void run(){
-        logMsg("Started process-folder-thread");
+        logMsg("Started process-folder-thread", true);
         // Start recursive process
         processFolder(sourceFolderPath, result, cancel);
         result.setDone();
-        logMsg("Finished process-folder-thread");
+        logMsg("Finished process-folder-thread", true);
     }
 
     private int processFolder(File folder, PathProcessResult result, AtomicBoolean cancel){
         String folderName = folder.toString();
-        logMsg("Processing folder " + folderName + "...");
+        logMsg("Processing folder: " + folderName, false);
         try {
             File[] fileArray = folder.listFiles();
             if(fileArray == null){
-                logMsg("The given file needs to be a folder: " + folder);
+                logMsg("The given file needs to be a folder: " + folder, false);
                 return 0;
             }
 
@@ -62,12 +62,12 @@ public class ProcessFolderThread extends AbstractServiceThread {
             // Save the hashcode for this folder
             Integer folderHashcode = hashcode.build();
             logMsg(String.format("Processed folder %s: %n\tFolder count: %s %n\tFile count: %s %n\tHashcode: %s",
-                    folderName, subfolders.size(), files.size(), folderHashcode));
+                    folderName, subfolders.size(), files.size(), folderHashcode), true);
             result.addFolder(new FolderAndHashcode(folder, folderHashcode));
             return folderHashcode;
 
         }catch (Exception e){
-            logMsg("Exception while processing folder '" + folderName + "': " + e.getMessage());
+            logMsg("Exception while processing folder '" + folderName + "': " + e.getMessage(), false);
             e.printStackTrace();
             return 0;
         }
@@ -81,7 +81,7 @@ public class ProcessFolderThread extends AbstractServiceThread {
 
             // Check if the user cancelled
             if(cancel.get()) {
-                logMsg("Cancelled process");
+                logMsg("Cancelled process", false);
                 return true;
             }
         }
@@ -94,7 +94,7 @@ public class ProcessFolderThread extends AbstractServiceThread {
 
             // Check if the user cancelled
             if(cancel.get()) {
-                logMsg("Cancelled process");
+                logMsg("Cancelled process", false);
                 return true;
             }
         }
@@ -112,12 +112,12 @@ public class ProcessFolderThread extends AbstractServiceThread {
                 result.incrementFileCount();
                 files.add(f);
             } else {
-                logMsg("\tSkipping unknown file: " + f);
+                logMsg(" *** Skipping unknown file: " + f, false);
             }
 
             // Check if the user cancelled
             if(cancel.get()) {
-                logMsg("Cancelled process");
+                logMsg("Cancelled process", false);
                 return null;
             }
         }

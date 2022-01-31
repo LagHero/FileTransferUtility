@@ -27,6 +27,10 @@ public class PathValidationResult {
         this.errorMessages = errorMessages;
     }
 
+    public void addErrorMessage(String message) {
+        this.errorMessages.add(message);
+    }
+
     public File getFile() {
         return file;
     }
@@ -34,4 +38,5 @@ public class PathValidationResult {
     public void setFile(File file) {
         this.file = file;
     }
+
 }

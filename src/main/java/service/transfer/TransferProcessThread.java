@@ -21,7 +21,7 @@ public class TransferProcessThread extends AbstractServiceThread {
     }
 
     public void run(){
-        logMsg("Started transfer-thread");
+        logMsg("Started transfer-thread", true);
 
         while (!cancel.get()) {
             // Get a folder that has been processed
@@ -43,13 +43,13 @@ public class TransferProcessThread extends AbstractServiceThread {
             try {
                 transferFolder(sourceFolder, destinationFolder, transferResult, cancel);
             } catch (IOException e) {
-                logMsg("Exception while transferring to: " + destinationFolder);
+                logMsg("Exception while transferring to: " + destinationFolder, false);
                 e.printStackTrace();
             }
         }
 
         transferResult.setDone();
-        logMsg("Finished transfer-thread");
+        logMsg("Finished transfer-thread", true);
     }
 
     private File getDestinationFolder(File rootSourceFolder, File rootDestinationFolderPath, File sourceFolder) {
@@ -60,33 +60,33 @@ public class TransferProcessThread extends AbstractServiceThread {
         // Create the folder and its parents if needed
         if(destinationFolder.mkdirs()) {
             transferResult.incrementFolderCount();
-            logMsg("Created destination folder: " + destinationFolder);
+            logMsg("Created destination folder: " + destinationFolder, true);
         }
 
         return destinationFolder;
     }
 
     private void transferFolder(FolderAndHashcode sourceFolder, File destinationFolder, TransferProcessResult transferResult, AtomicBoolean cancel) throws IOException {
-        logMsg(String.format("Transferring data %n\tFrom: %s%n\tTo: %s", sourceFolder.getFolder(), destinationFolder));
+        logMsg(String.format("Transferring data %n\tFrom: %s%n\tTo: %s", sourceFolder.getFolder(), destinationFolder), true);
 
         // Check the hashcode
         boolean transferFiles;
         File hashcodeFile = getHashcodeFile(destinationFolder);
         if(!hashcodeFile.exists()) {
             transferFiles = true;
-            logMsg("\tHashcode file missing");
+            logMsg("Hashcode file missing", true);
         } else {
             Integer destinationHash = readHashcode(hashcodeFile);
             if(destinationHash == null) {
                 transferFiles = true;
-                logMsg("\tHashcode not found");
+                logMsg("Hashcode not found", true);
             } else {
                 if(destinationHash.equals(sourceFolder.getFolderHashcode())) {
                     transferFiles = false;
-                    logMsg("\tHashcode is equal");
+                    logMsg("Hashcode is equal", true);
                 } else {
                     transferFiles = true;
-                    logMsg("\tHashcode not equal");
+                    logMsg("Hashcode not equal", true);
                 }
             }
         }
@@ -96,7 +96,7 @@ public class TransferProcessThread extends AbstractServiceThread {
             transferFiles(sourceFolder.getFolder(), destinationFolder, transferResult, cancel);
 
             // Write the Hashcode
-            logMsg("Wrote hashcode property file to folder: " + destinationFolder);
+            logMsg("Wrote hashcode property file to folder: " + destinationFolder, true);
             saveHashcode(hashcodeFile, sourceFolder.getFolderHashcode());
         }
     }
@@ -113,12 +113,12 @@ public class TransferProcessThread extends AbstractServiceThread {
             reader.close();
             String hashcode = prop.getProperty(TransferService.HASHCODE_FILE_PROP_HASH);
             if(hashcode == null){
-                logMsg(String.format("No hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile));
+                logMsg(String.format("No hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile), true);
                 return null;
             }
             return Integer.valueOf(hashcode);
         } catch (IOException e) {
-            logMsg(String.format("Exception while reading hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile));
+            logMsg(String.format("Exception while reading hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile), false);
             e.printStackTrace();
             return null;
         }
@@ -127,14 +127,14 @@ public class TransferProcessThread extends AbstractServiceThread {
     private void transferFiles(File sourceFolder, File destinationFolder, TransferProcessResult transferResult, AtomicBoolean cancel) throws IOException {
         File[] fileArray = sourceFolder.listFiles();
         if(fileArray == null){
-            logMsg("The given file needs to be a folder: " + sourceFolder);
+            logMsg("The given file needs to be a folder: " + sourceFolder, false);
             return;
         }
 
         // Loop through all the source files and copy them over to the destination folder
         for(File file : fileArray) {
             if(cancel.get()) {
-                logMsg("Cancelled process");
+                logMsg("Cancelled process", false);
                 break;
             }
             if(file.isDirectory()){
@@ -147,10 +147,10 @@ public class TransferProcessThread extends AbstractServiceThread {
             Path destinationPath = destinationFile.toPath();
             if(destinationFile.exists() && Files.mismatch(sourcePath, destinationPath) == -1L){
                 // Files are equal, skip
-                logMsg("Skipping equal file: " + sourcePath);
+                logMsg("Skipping equal file: " + sourcePath, true);
                 continue;
             }
-            logMsg(String.format("Transferring file %n\tFrom: %s%n\tTo: %s", sourcePath, destinationPath));
+            logMsg(String.format("Transferring file %n\tFrom: %s%n\tTo: %s", sourcePath, destinationPath), true);
             Files.copy(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS);
             transferResult.incrementFileCount();
         }
@@ -165,7 +165,7 @@ public class TransferProcessThread extends AbstractServiceThread {
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            logMsg(String.format("Exception while writing hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile));
+            logMsg(String.format("Exception while writing hashcode property '%s' in file: %s", TransferService.HASHCODE_FILE_PROP_HASH,  hashcodeFile), false);
             e.printStackTrace();
         }
     }

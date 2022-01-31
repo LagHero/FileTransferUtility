@@ -25,6 +25,8 @@ public class WindowFrame {
     private static JLabel fileCountLabel;
     private static JLabel transferFolderCountLabel;
     private static JLabel transferFileCountLabel;
+    private static JTextArea logMessages;
+    private static JCheckBox logDebugMessages;
 
     // Singleton
     private WindowFrame(){
@@ -35,16 +37,17 @@ public class WindowFrame {
         initButton(frame);
         initCountLabels(frame);
         initCancelButton(frame);
+        initLogMessagesArea(frame);
     }
 
     public static WindowFrame getInstance(){
         return INSTANCE;
     }
 
-    public JFrame createFrame() {
+    private JFrame createFrame() {
         JFrame frame = new JFrame("File Transfer Utility");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1000, 800);
+        frame.setSize(700, 800);
 
         //Display the window.
         frame.setLayout(null);
@@ -53,25 +56,26 @@ public class WindowFrame {
         return frame;
     }
 
-    public void initSourceField(JFrame frame) {
+    private void initSourceField(JFrame frame) {
         frame.add(createNewLabel("Source: ", 50,50,100,30));
         sourceTextBox = new JTextField("C:\\");
-        sourceTextBox.setBounds(200, 50, 400, 30);
+        sourceTextBox.setBounds(150, 50, 500, 30);
         frame.add(sourceTextBox);
     }
 
-    public void initDestinationField(JFrame frame) {
+    private void initDestinationField(JFrame frame) {
         frame.add(createNewLabel("Destination: ", 50,100,100,30));
         destinationTextBox = new JTextField("C:\\");
-        destinationTextBox.setBounds(200, 100, 400, 30);
+        destinationTextBox.setBounds(150, 100, 500, 30);
         frame.add(destinationTextBox);
     }
 
-    public void initButton(JFrame frame) {
+    private void initButton(JFrame frame) {
         JButton button = new JButton("Start Transfer!");
-        button.setBounds(50,200,200,50);
+        button.setBounds(50,150,200,50);
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                logMessages.setText(null);
                 // Disable the button
                 button.setEnabled(false);
 
@@ -80,9 +84,8 @@ public class WindowFrame {
                 PathValidationResult result = getFacade().validatePath(sourceFolderPathText);
                 if(!result.isValid()) {
                     for(String msg : result.getErrorMessages()){
-                        System.out.println(msg);
+                        addMsg(msg + System.lineSeparator(), false);
                     }
-                    // TODO: Tell the user about the errors
                     button.setEnabled(true);
                     return;
                 }
@@ -99,7 +102,7 @@ public class WindowFrame {
                     updateFileCount(processResult.getFileCount().intValue());
                     if (processResult.isDone()) {
                         processResultThreadService.shutdown();
-                        System.out.println("Shutdown processResultUIThread");
+                        addMsg("Shutdown processResultUIThread" + System.lineSeparator(), true);
                     }
                 };
                 processResultThreadService.scheduleAtFixedRate(processResultThread, 0, 100, TimeUnit.MILLISECONDS);
@@ -109,9 +112,8 @@ public class WindowFrame {
                 result = getFacade().validatePath(destinationFolderPathText);
                 if(!result.isValid()) {
                     for(String msg : result.getErrorMessages()){
-                        System.out.println(msg);
+                        addMsg(msg + System.lineSeparator(), false);
                     }
-                    // TODO: Tell the user about the errors
                     button.setEnabled(true);
                     return;
                 }
@@ -128,7 +130,7 @@ public class WindowFrame {
                     updateTransferFileCount(transferResult.getFileCount().intValue());
                     if (transferResult.isDone()) {
                         transferResultThreadService.shutdown();
-                        System.out.println("Shutdown transferResultThreadUIUpdater");
+                        addMsg("Shutdown transferResultThreadUIUpdater" + System.lineSeparator(), true);
                     }
                 };
                 transferResultThreadService.scheduleAtFixedRate(transferResultThread, 0, 100, TimeUnit.MILLISECONDS);
@@ -147,42 +149,38 @@ public class WindowFrame {
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
-                System.out.println("Done!");
+                addMsg("Done!" + System.lineSeparator(), false);
                 button.setEnabled(true);
             }
         });
         frame.add(button);
     }
 
-    public void initCountLabels(JFrame frame) {
-        frame.add(createNewLabel("Folder Count: ", 50,300,100,30));
+    private void initCountLabels(JFrame frame) {
+        frame.add(createNewLabel("Folder Count: ", 50,250,100,30));
         folderCountLabel = new JLabel("0");
-        folderCountLabel.setBounds(200, 300, 200, 30);
+        folderCountLabel.setBounds(150, 250, 200, 30);
         frame.add(folderCountLabel);
 
-        frame.add(createNewLabel("File Count: ", 50,350,100,30));
+        frame.add(createNewLabel("File Count: ", 50,300,100,30));
         fileCountLabel = new JLabel("0");
-        fileCountLabel.setBounds(200, 350, 200, 30);
+        fileCountLabel.setBounds(150, 300, 200, 30);
         frame.add(fileCountLabel);
 
-        frame.add(createNewLabel("Transfer Folder Count: ", 450,300,100,30));
+        frame.add(createNewLabel("Transfer Folder Count: ", 350,250,150,30));
         transferFolderCountLabel = new JLabel("0");
-        transferFolderCountLabel.setBounds(600, 300, 200, 30);
+        transferFolderCountLabel.setBounds(500, 250, 200, 30);
         frame.add(transferFolderCountLabel);
 
-        frame.add(createNewLabel("Transfer File Count: ", 450,350,100,30));
+        frame.add(createNewLabel("Transfer File Count: ", 350,300,150,30));
         transferFileCountLabel = new JLabel("0");
-        transferFileCountLabel.setBounds(600, 350, 200, 30);
+        transferFileCountLabel.setBounds(500, 300, 200, 30);
         frame.add(transferFileCountLabel);
     }
-    public void initCancelButton(JFrame frame) {
+    private void initCancelButton(JFrame frame) {
         JButton button = new JButton("Cancel");
-        button.setBounds(50,400,200,50);
-        button.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                getFacade().stopService();
-            }
-        });
+        button.setBounds(50,350,200,50);
+        button.addActionListener(e -> getFacade().stopService());
         frame.add(button);
     }
 
@@ -190,6 +188,20 @@ public class WindowFrame {
         JLabel newLabel = new JLabel(label);
         newLabel.setBounds(x, y, width, height);
         return newLabel;
+    }
+
+    private void initLogMessagesArea(JFrame frame) {
+        frame.add(createNewLabel("Show Debug Messages: ", 450,420,150,30));
+        logDebugMessages = new JCheckBox();
+        logDebugMessages.setBounds(600, 420, 50,30);
+        frame.add(logDebugMessages);
+        logMessages = new JTextArea();
+        //logMessages.setEditable(false);
+        JScrollPane scrollArea = new JScrollPane(logMessages);
+        scrollArea.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollArea.setBounds(50, 450, 600, 300);
+        frame.add(scrollArea);
     }
 
     synchronized public static void updateFolderCount(int valueToDisplay){
@@ -206,6 +218,13 @@ public class WindowFrame {
 
     synchronized public static void updateTransferFileCount(int valueToDisplay){
         transferFileCountLabel.setText(String.valueOf(valueToDisplay));
+    }
+
+    synchronized public static void addMsg(String msg, boolean isDebug){
+        if(!isDebug || logDebugMessages.isSelected()){
+            logMessages.append(msg);
+        }
+        System.out.print(msg);
     }
 
     private ServiceFacade getFacade(){

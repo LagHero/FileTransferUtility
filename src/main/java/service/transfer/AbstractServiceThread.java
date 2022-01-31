@@ -1,5 +1,7 @@
 package service.transfer;
 
+import ui.WindowFrame;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractServiceThread extends Thread {
@@ -11,7 +13,8 @@ public abstract class AbstractServiceThread extends Thread {
         this.cancel = cancel;
     }
 
-    void logMsg(String msg) {
-        System.out.printf("%s - %s%n", this.getName(), msg);
+    void logMsg(String message, boolean isDebug) {
+        String msg = String.format("%s - %s%n", this.getName(), message);
+        WindowFrame.addMsg(msg, isDebug);
     }
 }
