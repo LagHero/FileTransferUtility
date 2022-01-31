@@ -59,6 +59,7 @@ public class TransferProcessThread extends AbstractServiceThread {
 
         // Create the folder and its parents if needed
         if(destinationFolder.mkdirs()) {
+            transferResult.incrementFolderCount();
             logMsg("Created destination folder: " + destinationFolder);
         }
 
@@ -73,19 +74,19 @@ public class TransferProcessThread extends AbstractServiceThread {
         File hashcodeFile = getHashcodeFile(destinationFolder);
         if(!hashcodeFile.exists()) {
             transferFiles = true;
-            logMsg(String.format("\tHashcode file missing"));
+            logMsg("\tHashcode file missing");
         } else {
             Integer destinationHash = readHashcode(hashcodeFile);
             if(destinationHash == null) {
                 transferFiles = true;
-                logMsg(String.format("\tHashcode not found"));
+                logMsg("\tHashcode not found");
             } else {
                 if(destinationHash.equals(sourceFolder.getFolderHashcode())) {
                     transferFiles = false;
-                    logMsg(String.format("\tHashcode is equal"));
+                    logMsg("\tHashcode is equal");
                 } else {
                     transferFiles = true;
-                    logMsg(String.format("\tHashcode not equal"));
+                    logMsg("\tHashcode not equal");
                 }
             }
         }
@@ -146,10 +147,12 @@ public class TransferProcessThread extends AbstractServiceThread {
             Path destinationPath = destinationFile.toPath();
             if(destinationFile.exists() && Files.mismatch(sourcePath, destinationPath) == -1L){
                 // Files are equal, skip
+                logMsg("Skipping equal file: " + sourcePath);
                 continue;
             }
             logMsg(String.format("Transferring file %n\tFrom: %s%n\tTo: %s", sourcePath, destinationPath));
             Files.copy(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS);
+            transferResult.incrementFileCount();
         }
     }
 
