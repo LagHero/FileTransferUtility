@@ -82,7 +82,7 @@ public class WindowFrame {
                 // Validate the source folder
                 String sourceFolderPathText = sourceTextBox.getText();
                 PathValidationResult result = getFacade().validatePath(sourceFolderPathText);
-                if(!result.isValid()) {
+                if(result.isNotValid()) {
                     for(String msg : result.getErrorMessages()){
                         addMsg(msg + System.lineSeparator(), false);
                     }
@@ -110,7 +110,7 @@ public class WindowFrame {
                 // Validate the destination folder
                 String destinationFolderPathText = destinationTextBox.getText();
                 result = getFacade().validatePath(destinationFolderPathText);
-                if(!result.isValid()) {
+                if(result.isNotValid()) {
                     for(String msg : result.getErrorMessages()){
                         addMsg(msg + System.lineSeparator(), false);
                     }

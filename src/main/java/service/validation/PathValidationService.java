@@ -2,7 +2,6 @@ package service.validation;
 
 import com.google.common.base.Strings;
 import service.IPathValidationService;
-import service.transfer.PathProcessResult;
 
 import java.io.File;
 
@@ -12,7 +11,7 @@ public class PathValidationService implements IPathValidationService {
         PathValidationResult result = new PathValidationResult();
 
         isNotNull(path, result);
-        if(!result.isValid()){
+        if(result.isNotValid()){
             return result;
         }
 

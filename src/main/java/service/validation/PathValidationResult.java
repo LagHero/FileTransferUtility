@@ -11,8 +11,8 @@ public class PathValidationResult {
     private List<String> errorMessages = Lists.newLinkedList();
     private File file = null;
 
-    public boolean isValid() {
-        return isValid;
+    public boolean isNotValid() {
+        return !isValid;
     }
 
     public void setValid(boolean valid) {
